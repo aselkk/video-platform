@@ -6,11 +6,100 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs14.x
+  environment:
+    user_pool_id: { Ref: UserPoolVP } 
+    client_id: { Ref: UserPoolClientVP }
+    # dynamo_table: { Ref: UsersTableVP }
 
-functions:
-  hello:
-    handler: handler.hello
-    events:
-      - httpApi:
-          path: /
-          method: get
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminSetUserPassword
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+      Resource: "*"
+
+functions: 
+  signUp: 
+    handler: lambdas/user/signUp.handler
+    events: 
+      - http: 
+          path: /user/signUp
+          method: post
+          cors: true
+  verification: 
+    handler: lambdas/user/verification.handler
+    events: 
+      - http: 
+          path: /user/verification
+          method: post
+          cors: true
+  signIn: 
+    handler: lambdas/user/signIn.handler
+    events: 
+      - http: 
+          path: /user/signIn
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    UserPoolVP:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: vp-user-pool
+
+        UsernameAttributes:
+          - "email"
+
+        Schema:
+          - AttributeDataType: String
+            Name: first_name
+            Required: false
+            Mutable: true
+
+          - AttributeDataType: String
+            Name: last_name
+            Required: false
+            Mutable: true
+
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+
+        EmailVerificationMessage: Your verification code is {####}.
+        EmailVerificationSubject: Your verification code
+
+        AutoVerifiedAttributes: ["email"]
+
+    UserPoolClientVP:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: vp-user-pool-client
+        GenerateSecret: false
+        UserPoolId: { Ref: UserPoolVP }
+        AccessTokenValidity: 5
+        IdTokenValidity: 5
+        ExplicitAuthFlows:
+          - "ADMIN_NO_SRP_AUTH"
+
+    # UsersTableVP:
+    #   Type: AWS::DynamoDB::Table
+    #   Properties:
+    #     TableName: vp-users-table
+    #     AttributeDefinitions:
+    #       - AttributeName: email
+    #         AttributeType: S
+
+    #     KeySchema:
+    #       - AttributeName: email
+    #         KeyType: HASH
+
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1
