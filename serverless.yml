@@ -9,7 +9,7 @@ provider:
   environment:
     user_pool_id: { Ref: UserPoolVP } 
     client_id: { Ref: UserPoolClientVP }
-    # dynamo_table: { Ref: UsersTableVP }
+    table_name: { Ref: UsersTableVP }
 
   iamRoleStatements:
     - Effect: Allow
@@ -17,11 +17,7 @@ provider:
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminSetUserPassword
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:GetItem
-        - dynamodb:Scan
+        - dynamodb:*
       Resource: "*"
 
 functions: 
@@ -46,6 +42,21 @@ functions:
           path: /user/signIn
           method: post
           cors: true
+  getUsers: 
+    handler: lambdas/user/getUsers.handler
+    events: 
+      - http: 
+          path: /user/getUsers
+          method: get
+          cors: true
+  preSignUp: 
+    handler: triggers/preSignUp.handler
+    events:
+      - cognitoUserPool:
+          pool: vp-user-pool
+          trigger: PreSignUp
+          existing: true
+          forceDeploy: true
 
 resources:
   Resources:
@@ -88,18 +99,18 @@ resources:
         ExplicitAuthFlows:
           - "ADMIN_NO_SRP_AUTH"
 
-    # UsersTableVP:
-    #   Type: AWS::DynamoDB::Table
-    #   Properties:
-    #     TableName: vp-users-table
-    #     AttributeDefinitions:
-    #       - AttributeName: email
-    #         AttributeType: S
+    UsersTableVP:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: vp-users-table
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
 
-    #     KeySchema:
-    #       - AttributeName: email
-    #         KeyType: HASH
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
 
-    #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

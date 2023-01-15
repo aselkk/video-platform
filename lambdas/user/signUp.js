@@ -1,4 +1,4 @@
-const { sendResponse, validateInput } = require("./index");
+const { sendResponse, validateInput } = require("../index");
 const { CognitoUserPool } = require("amazon-cognito-identity-js");
 const { user_pool_id, client_id } = process.env;
 
