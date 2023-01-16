@@ -10,6 +10,7 @@ provider:
     user_pool_id: { Ref: UserPoolVP } 
     client_id: { Ref: UserPoolClientVP }
     table_name: { Ref: UsersTableVP }
+    bucket_name: { Ref: S3BucketVP }
   apiGateway:
     binaryMediaTypes:
       - 'multipart/form-data'
@@ -21,7 +22,18 @@ provider:
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminSetUserPassword
         - dynamodb:*
+        - s3:*
       Resource: "*"
+
+plugins:
+    - serverless-s3-sync
+
+custom:
+    tableName: player-points
+    bucketName: vp-s3-bucket-akk
+    s3Sync:
+        - bucketName: vp-s3-bucket
+          localDir: uploadData
 
 functions: 
   signUp: 
@@ -60,9 +72,27 @@ functions:
           trigger: PreSignUp
           existing: true
           forceDeploy: true
+  createFile:
+    handler: lambdas/s3/createFile.handler
+    events:
+        - http:
+              path: create-file/{fileName}
+              method: POST
+              cors: true
+  getFile:
+      handler: lambdas/s3/getFile.handler
+      events:
+          - http:
+                path: get-file/{fileName}
+                method: GET
+                cors: true
 
 resources:
   Resources:
+    S3BucketVP:
+      Type: AWS::S3::Bucket
+      Properties:
+          BucketName: vp-s3-bucket
     UserPoolVP:
       Type: AWS::Cognito::UserPool
       Properties:
