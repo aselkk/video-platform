@@ -10,6 +10,9 @@ provider:
     user_pool_id: { Ref: UserPoolVP } 
     client_id: { Ref: UserPoolClientVP }
     table_name: { Ref: UsersTableVP }
+  apiGateway:
+    binaryMediaTypes:
+      - 'multipart/form-data'
 
   iamRoleStatements:
     - Effect: Allow
@@ -114,3 +117,5 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+  
