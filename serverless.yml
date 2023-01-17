@@ -86,13 +86,22 @@ functions:
                 path: get-file/{fileName}
                 method: GET
                 cors: true
+  uploadFile:
+    handler: lambdas/s3/uploadFile.handler
+    events:
+        - http:
+              path: upload-file
+              method: GET
+              cors: true
 
 resources:
   Resources:
     S3BucketVP:
       Type: AWS::S3::Bucket
       Properties:
-          BucketName: vp-s3-bucket
+        BucketName: vp-s3-bucket
+        CorsConfiguration:
+
     UserPoolVP:
       Type: AWS::Cognito::UserPool
       Properties:
