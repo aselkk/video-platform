@@ -91,7 +91,7 @@ functions:
     events:
         - http:
               path: upload-file
-              method: GET
+              method: POST
               cors: true
 
 resources:
@@ -125,8 +125,8 @@ resources:
           PasswordPolicy:
             MinimumLength: 6
 
-        EmailVerificationMessage: Your verification code is {####}.
-        EmailVerificationSubject: Your verification code
+        EmailVerificationMessage: here is your code {####} !
+        EmailVerificationSubject: verification code
 
         AutoVerifiedAttributes: ["email"]
 

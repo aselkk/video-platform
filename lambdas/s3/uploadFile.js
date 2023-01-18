@@ -4,26 +4,32 @@ const s3 = new AWS.S3({
 		signatureVersion: 'v4',
 });
 const {bucket_name} = process.env;
+const parseMultipart = require('parse-multipart');
+
 
 exports.handler = async (event) => {
-	const randomID = parseInt(Math.random() * 10000000);
-	const Key = `${randomID}.mp4`;
-	const Bucket = bucket_name;
-	const Expires = 300;
+	try {
+    const { filename, data } = extractFile(event)
+    await s3.putObject({ Bucket: bucket_name, Key: filename, ACL: 'public-read', Body: data }).promise();
+		
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ link: `https://${bucket_name}.s3.amazonaws.com/${filename}` })
+    }
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: err.stack, headers: event.headers })
+    }
+  }
+}
+function extractFile(event) {
+  const boundary = parseMultipart.getBoundary(event.headers['Content-Type'])
+  const parts = parseMultipart.Parse(Buffer.from(event.body, 'base64'), boundary);
+  const [{ filename, data }] = parts
 
-	const s3Url = await s3.getSignedUrlPromise('putObject', {
-			Bucket,
-			Key,
-			Expires,
-			ContentType: 'video/mp4',
-			ACL: 'public-read'
-	});
-	
-	return {
-			statusCode: 200,
-			body: JSON.stringify({uploadURL: s3Url, Key}),
-			headers: {
-				'Content-Type': 'application/json'
-			}
-	};
+  return {
+    filename,
+    data
+  }
 }
